@@ -1,0 +1,25 @@
+{
+  "name": "@africanmarketos/mvr-api-client",
+  "version": "2.6.0",
+  "description": "TypeScript client for African Market OS MVR API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["mvr", "api", "african-market", "relationships", "trust"],
+  "author": "African Market OS <info@africanmarketos.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/africanmarketos/mvr-api-ts-client"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
