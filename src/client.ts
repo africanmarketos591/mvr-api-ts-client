@@ -1,43 +1,51 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
-import { 
-  MVRApiConfig, 
-  MVRScoreResponse, 
-  SurveyAggregateRequest, 
-  SurveyAggregateResponse,
-  TrendsResponse,
-  ForecastRequest,
-  ForecastResponse,
-  CompareRequest,
-  CompareResponse,
-  BenchmarkResponse,
-  InsightsResponse,
-  TemperatureResponse,
-  PolicyAuditResponse,
-  StoryResponse,
-  MetaResponse,
-  UsageResponse,
-  WhoAmIResponse,
-  DocsResponse,
-  SessionResponse,
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
+import {
+  MVRApiConfig,
+  AMOSScoreRequest,
+  AMOSScoreResponse,
   HealthResponse,
-  MVRError
+  MVRError,
 } from './types';
 
-export class MVRApiClient {
+/**
+ * Structured error wrapper for AMOS / MVR API failures.
+ */
+export class MVRApiError extends Error {
+  public readonly errorData: MVRError;
+
+  constructor(errorData: MVRError) {
+    super(errorData.message || errorData.error || 'MVR API error');
+    this.name = 'MVRApiError';
+    this.errorData = errorData;
+  }
+}
+
+/**
+ * Main AMOS-MVR API client (license + email authentication).
+ *
+ * - Scores via POST /v1/amos/score
+ * - Health via  GET  /health
+ */
+export class MVRClient {
   private client: AxiosInstance;
   private config: MVRApiConfig;
 
   constructor(config: MVRApiConfig) {
+    if (!config.license || !config.email) {
+      throw new Error('license and email are required in MVRApiConfig');
+    }
+
     this.config = {
-      baseURL: 'https://africanmarketos.com/v1',
+      baseURL: 'https://africanmarketos.com',
       timeout: 30000,
       maxRetries: 3,
-      ...config
+      ...config,
     };
-
-    if (!this.config.license || !this.config.email) {
-      throw new Error('License and email are required for MVR API client');
-    }
 
     this.client = axios.create({
       baseURL: this.config.baseURL,
@@ -46,187 +54,143 @@ export class MVRApiClient {
         'x-mvr-license': this.config.license,
         'x-buyer-email': this.config.email,
         'Content-Type': 'application/json',
-        'User-Agent': `mvr-api-ts-client/2.6.0`
-      }
-    });
-
-    this.setupInterceptors();
-  }
-
-  private setupInterceptors(): void {
-    this.client.interceptors.request.use(
-      (config) => {
-        console.debug(`MVR API Request: ${config.method?.toUpperCase()} ${config.url}`);
-        return config;
+        // keep this in sync with package.json if you bump
+        'User-Agent': 'amos-mvr-ts-client/1.0.0',
       },
-      (error) => Promise.reject(error)
-    );
-
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
-      async (error: AxiosError) => {
-        if (error.response?.status === 429) {
-          const retryAfter = error.response.headers['retry-after'];
-          console.warn(`Rate limited. Retrying after ${retryAfter} seconds`);
-          await new Promise(resolve => setTimeout(resolve, (parseInt(retryAfter) || 60) * 1000));
-          return this.client.request(error.config!);
-        }
-        return Promise.reject(error);
-      }
-    );
+    });
   }
 
-  private async request<T>(endpoint: string, options: any = {}): Promise<T> {
-    try {
-      const response = await this.client.request<T>({
-        url: endpoint,
-        ...options
-      });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw error.response.data;
-      }
-      throw {
-        ok: false,
-        error: 'NETWORK_ERROR',
-        error_code: 'NETWORK_ERROR',
-        message: error instanceof Error ? error.message : 'Unknown network error',
-        attribution: {
-          framework: 'Minimum Viable Relationships (MVR)',
-          creator: 'Farouk Mark Mukiibi',
-          source: 'African Market OS',
-          license: 'CC BY 4.0 | Commercial Use Licensed',
-          doi: '10.5281/zenodo.17310446'
+  // ------------------------------------------------------------
+  // INTERNAL REQUEST WRAPPER
+  // ------------------------------------------------------------
+  private async request<T>(config: AxiosRequestConfig): Promise<T> {
+    const maxRetries = this.config.maxRetries ?? 0;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response: AxiosResponse<T> = await this.client.request<T>(config);
+        return response.data;
+      } catch (err) {
+        const axiosErr = err as AxiosError;
+
+        // If this is an Axios error with a response, map it to MVRError
+        if (axios.isAxiosError(axiosErr) && axiosErr.response) {
+          const status = axiosErr.response.status;
+
+          // Handle rate limiting with Retry-After header
+          if (status === 429 && attempt < maxRetries) {
+            const retryAfterHeader = axiosErr.response.headers?.['retry-after'];
+            const retryAfterSeconds = retryAfterHeader
+              ? parseInt(String(retryAfterHeader), 10)
+              : 60;
+
+            await new Promise((resolve) =>
+              setTimeout(resolve, retryAfterSeconds * 1000),
+            );
+            continue;
+          }
+
+          const raw = (axiosErr.response.data || {}) as any;
+
+          const errorData: MVRError = {
+            ok: false,
+            error: raw.error ?? 'API_ERROR',
+            error_code: raw.error_code ?? String(status ?? 'API_ERROR'),
+            message:
+              raw.message ??
+              raw.error ??
+              'Unknown error from AMOS / MVR API endpoint',
+            request_id: raw.request_id,
+            limit: raw.limit,
+            window: raw.window,
+            retry_after: raw.retry_after,
+            attribution: raw.attribution ?? {
+              framework: 'Minimum Viable Relationships (MVR)',
+              creator: 'Farouk Mark Mukiibi',
+              source: 'African Market OS',
+              license: 'CC BY 4.0 | Commercial Use Licensed',
+              doi: '10.5281/zenodo.17310446',
+            },
+          };
+
+          throw new MVRApiError(errorData);
         }
-      };
+
+        // Network / unknown error with no response
+        if (attempt === maxRetries) {
+          const fallbackError: MVRError = {
+            ok: false,
+            error: 'NETWORK_ERROR',
+            error_code: 'NETWORK_ERROR',
+            message:
+              err instanceof Error ? err.message : 'Unknown network error',
+            attribution: {
+              framework: 'Minimum Viable Relationships (MVR)',
+              creator: 'Farouk Mark Mukiibi',
+              source: 'African Market OS',
+              license: 'CC BY 4.0 | Commercial Use Licensed',
+              doi: '10.5281/zenodo.17310446',
+            },
+          };
+          throw new MVRApiError(fallbackError);
+        }
+
+        // simple exponential backoff for transient network errors
+        await new Promise((resolve) =>
+          setTimeout(resolve, 2 ** attempt * 1000),
+        );
+      }
     }
-  }
 
-  // Scores endpoints
-  async getScores(sector?: string): Promise<MVRScoreResponse> {
-    const params = sector ? { sector } : {};
-    return this.request<MVRScoreResponse>('/v1/scores', { method: 'GET', params });
-  }
-
-  async surveyAggregate(request: SurveyAggregateRequest): Promise<SurveyAggregateResponse> {
-    return this.request<SurveyAggregateResponse>('/v1/survey-aggregate', {
-      method: 'POST',
-      data: request
+    // This should be unreachable, but TS likes a final throw
+    throw new MVRApiError({
+      ok: false,
+      error: 'UNKNOWN_ERROR',
+      error_code: 'UNKNOWN_ERROR',
+      message: 'Unknown error calling AMOS / MVR API',
+      attribution: {
+        framework: 'Minimum Viable Relationships (MVR)',
+        creator: 'Farouk Mark Mukiibi',
+        source: 'African Market OS',
+        license: 'CC BY 4.0 | Commercial Use Licensed',
+        doi: '10.5281/zenodo.17310446',
+      },
     });
   }
 
-  // Intelligence endpoints
-  async getTrends(sector?: string, days?: number): Promise<TrendsResponse> {
-    const params: any = {};
-    if (sector) params.sector = sector;
-    if (days) params.days = days;
-    
-    return this.request<TrendsResponse>('/v1/trends', { method: 'GET', params });
-  }
+  // ------------------------------------------------------------
+  // AMOS SCORING
+  // ------------------------------------------------------------
 
-  async forecast(request: ForecastRequest): Promise<ForecastResponse> {
-    return this.request<ForecastResponse>('/v1/forecast', {
+  /**
+   * POST /v1/amos/score
+   *
+   * Compute AMOS relational risk score, porosity, MVR-I and safe credit limit.
+   */
+  async scoreAMOS(payload: AMOSScoreRequest): Promise<AMOSScoreResponse> {
+    return this.request<AMOSScoreResponse>({
       method: 'POST',
-      data: request
+      url: '/v1/amos/score',
+      data: payload,
     });
   }
 
-  async compare(request: CompareRequest): Promise<CompareResponse> {
-    return this.request<CompareResponse>('/v1/compare', {
-      method: 'POST',
-      data: request
-    });
-  }
+  // ------------------------------------------------------------
+  // HEALTH
+  // ------------------------------------------------------------
 
-  async getBenchmark(sector?: string): Promise<BenchmarkResponse> {
-    const params = sector ? { sector } : {};
-    return this.request<BenchmarkResponse>('/v1/benchmark', { method: 'GET', params });
-  }
-
-  async getInsights(sector?: string): Promise<InsightsResponse> {
-    const params = sector ? { sector } : {};
-    return this.request<InsightsResponse>('/v1/insights', { method: 'GET', params });
-  }
-
-  async getTemperature(): Promise<TemperatureResponse> {
-    return this.request<TemperatureResponse>('/v1/temperature', { method: 'GET' });
-  }
-
-  async getPolicyMulti(): Promise<PolicyAuditResponse> {
-    return this.request<PolicyAuditResponse>('/v1/policy_multi', { method: 'GET' });
-  }
-
-  async postPolicyMulti(): Promise<PolicyAuditResponse> {
-    return this.request<PolicyAuditResponse>('/v1/policy_multi', { method: 'POST' });
-  }
-
-  async getStory(): Promise<StoryResponse> {
-    return this.request<StoryResponse>('/v1/story', { method: 'GET' });
-  }
-
-  async postStory(): Promise<StoryResponse> {
-    return this.request<StoryResponse>('/v1/story', { method: 'POST' });
-  }
-
-  // Utilities endpoints
-  async getMeta(): Promise<MetaResponse> {
-    return this.request<MetaResponse>('/v1/meta', { method: 'GET' });
-  }
-
-  async getUsage(): Promise<UsageResponse> {
-    return this.request<UsageResponse>('/v1/usage', { method: 'GET' });
-  }
-
-  async whoami(): Promise<WhoAmIResponse> {
-    return this.request<WhoAmIResponse>('/v1/whoami', { method: 'GET' });
-  }
-
-  async getDocs(): Promise<DocsResponse> {
-    return this.request<DocsResponse>('/v1/docs', { method: 'GET' });
-  }
-
-  async createSession(license: string, email: string): Promise<SessionResponse> {
-    return this.request<SessionResponse>('/v1/session/new', {
-      method: 'POST',
-      data: { license, email }
-    });
-  }
-
+  /**
+   * GET /health
+   *
+   * Lightweight health probe (no auth required).
+   */
   async health(): Promise<HealthResponse> {
-    return this.request<HealthResponse>('/v1/health', { method: 'GET' });
-  }
-
-  // Session-based client
-  withSession(sessionToken: string): SessionMVRApiClient {
-    return new SessionMVRApiClient({
-      baseURL: this.config.baseURL,
-      sessionToken,
-      timeout: this.config.timeout
+    return this.request<HealthResponse>({
+      method: 'GET',
+      url: '/health',
     });
   }
 }
 
-export class SessionMVRApiClient {
-  private client: AxiosInstance;
-
-  constructor(config: { baseURL?: string; sessionToken: string; timeout?: number }) {
-    this.client = axios.create({
-      baseURL: config.baseURL || 'https://africanmarketos.com/v1',
-      timeout: config.timeout || 30000,
-      headers: {
-        'x-mvr-session': config.sessionToken,
-        'Content-Type': 'application/json',
-        'User-Agent': `mvr-api-ts-client/2.6.0`
-      }
-    });
-  }
-
-  async getScores(sector?: string): Promise<MVRScoreResponse> {
-    const params = sector ? { sector } : {};
-    const response = await this.client.get<MVRScoreResponse>('/v1/scores', { params });
-    return response.data;
-  }
-
-  // Additional session endpoints can be added here...
-}
+// Optional backwards-compat export for old codebases
+export { MVRClient as MVRApiClient };
