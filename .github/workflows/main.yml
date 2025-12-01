@@ -3,11 +3,12 @@ name: Publish to npm
 on:
   push:
     tags:
-      - 'v*.*.*'   # Example: v2.6.0
+      - 'v*.*.*'   # Example: v1.0.0
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
