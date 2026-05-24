@@ -1,6 +1,6 @@
 {
   "name": "@africanmarketos/mvr-api-client",
-  "version": "1.1.0",
+  "version": "6.32.0",
   "description": "TypeScript client for the MVR API relational-readiness layer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,3 +23,4 @@
     "typescript": "^5.0.0"
   }
 }
+
