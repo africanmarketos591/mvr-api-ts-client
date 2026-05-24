@@ -4,6 +4,13 @@
   "description": "TypeScript client for the MVR API relational-readiness layer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "mvr-commercial-use-policy.md",
+    "well-known/mvr-license.json"
+  ],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
@@ -14,6 +21,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/africanmarketos591/mvr-api-ts-client"
+  },
+  "homepage": "https://github.com/africanmarketos591/mvr-api-ts-client#readme",
+  "bugs": {
+    "url": "https://github.com/africanmarketos591/mvr-api-ts-client/issues"
   },
   "dependencies": {
     "axios": "^1.6.0"
