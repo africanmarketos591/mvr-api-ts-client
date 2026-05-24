@@ -1,144 +1,92 @@
-# African Market OS — AMOS-MVR TypeScript Client
+# MVR API TypeScript Client
 
-Official **TypeScript SDK** for the  
-**African Market OS – AMOS-MVR API (Relational Porosity v9.x)**
+Lightweight TypeScript client for the current **MVR API - Minimum Viable Relationships** surface.
 
-This client provides a strongly-typed interface to the AMOS relational risk engine, including:
+This client targets the live MVR Core API v6.32.x:
 
-- ✅ Residual Risk Score (RRS)
-- ✅ Relational readiness (MVR-I)
-- ✅ Relational porosity (Pz) & shield explanation
-- ✅ Cash runway & liquidity state
-- ✅ Safe credit limits (local + USD)
-- ✅ Engine metadata & health checks
+- `POST /v1/auth-check`
+- `POST /v1/entity-resolve`
+- `POST /v1/evidence-completeness`
+- `POST /v1/decision-check`
+- `GET /v1/model-card`
+- `GET /v1/capabilities`
 
----
+It is aligned with the agent OpenAPI contract, public sandbox, and MCP registry entry.
 
-## 📦 Installation
+## Install
 
 ```bash
-npm install @africanmarketos/amos-mvr-client
-# or
-yarn add @africanmarketos/amos-mvr-client
-🚀 Quickstart
-ts
-Copy code
-import { AmosMvrClient } from '@africanmarketos/amos-mvr-client';
+npm install @africanmarketos/mvr-api-client
+```
 
-const client = new AmosMvrClient({
-  license: 'your-license-key',
-  email: 'you@example.com',
-  // optional:
-  // baseUrl: 'https://africanmarketos.com',
+## Public Sandbox
+
+The default key is the public sandbox key:
+
+```text
+X-API-Key: mvr-demo-key-2026
+```
+
+Sandbox use is non-commercial evaluation only. It is `full_advisory`, `client_safe`, illustrative, not for production, not for model training, and not for reverse engineering.
+
+## Example
+
+```ts
+import { MVRClient } from "@africanmarketos/mvr-api-client";
+
+const client = new MVRClient({
+  apiKey: process.env.MVR_API_KEY || "mvr-demo-key-2026"
 });
 
-// Minimal AMOS score request
-const score = await client.score({
-  amos_id: 'DEMO_ENTITY_001',
-  sector: 'FMCG_BEVERAGE',
-  region: 'EA',
-  revenue: 3_000_000_000,
-  expenses: 2_600_000_000,
-  cash: 170_000_000,
-  total_debt: 640_000_000,
-  arrears: 43_000_000,
-  days_silent: 2,
-  occupancy_rate: 98,
-  collection_rate: 96,
-  currency: 'KES',
+const result = await client.entityResolve({
+  entity_name: "MTN Nigeria",
+  country: "NG"
 });
 
-console.log('RRS:', score.RRS_SCORE);
-console.log('MVR-I:', score.meta.MVR_I);
-console.log('Safe limit (local):', score.CREDIT_ENGINE.ESTIMATED_SAFE_CREDIT_LIMIT_LOCAL);
-🧪 Including explicit MVR scores (optional)
-ts
-Copy code
-const score = await client.score({
-  amos_id: 'ANCHOR_TELCO_2025',
-  sector: 'FINTECH',
-  region: 'EA',
-  revenue: 307_142_100_000,
-  cash: 22_098_100_000,
-  total_debt: 120_881_300_000,
-  arrears: 7_000_000_000,
-  days_silent: 1,
-  occupancy_rate: 97,
-  collection_rate: 97,
-  currency: 'KES',
-  current_credit_limit_local: 200_000_000_000,
-  mvr: {
-    mvr_i: 83,
-    embeddedness: 86,
-    trust: 85,
-    reciprocity: 79,
-    guardian_vouchers: 82,
-    continuity: 85,
-    channel_permission: 80,
+console.log(result.response_meta?.environment); // "sandbox" when using demo key
+```
+
+## Evidence Completeness
+
+```ts
+const result = await client.evidenceCompleteness({
+  subject: {
+    entity_name: "Sandbox Kampala catering operator",
+    entity_archetype: "retail_chain",
+    country: "UG"
   },
+  market_scope: {
+    country: "UG",
+    city: "Kampala",
+    sector: "catering"
+  },
+  evidence_pack: [
+    {
+      id: "ev-licence-001",
+      evidence_type: "public_filing",
+      source_class: "administrative_record",
+      source_grade: "B",
+      stakeholder_class: "guardian",
+      evidence_origin: "field_research",
+      collection_method: "direct",
+      freshness_date: "2026-05-20",
+      evidence_geography: { country: "UG", city: "Kampala" },
+      structured_values: { guardian_strength: 72, permission: 68 }
+    }
+  ]
 });
+```
 
-console.log(score.meta.HEADLINE);
-❤️ Health Check
-ts
-Copy code
-const health = await client.health();
-console.log('Status:', health.status);
-console.log('Core version:', health.version);
-console.log('Wrapper:', health.wrapper);
-⚠️ Error Handling
-All API errors are raised as a structured AmosMvrError (wrapping the AMOS error envelope):
+## Agent Discovery
 
-ts
-Copy code
-import { AmosMvrClient, AmosMvrError } from '@africanmarketos/amos-mvr-client';
+- Agent OpenAPI: https://africanmarketos.com/api/openapi.agent.json
+- MCP endpoint: https://africanmarketos.com/mcp
+- MCP Registry name: `io.github.africanmarketos591/mvr-api`
+- Sandbox guide: https://africanmarketos.com/docs/sandbox.md
+- Agent instructions: https://africanmarketos.com/AGENTS.md
 
-try {
-  const score = await client.score({
-    // …missing required fields, for example
-  });
-} catch (err) {
-  if (err instanceof AmosMvrError) {
-    console.error('AMOS error code:', err.error.error);
-    console.error('Message:', err.error.message);
-    console.error('Request ID:', err.error.request_id);
-  } else {
-    console.error('Unexpected error:', err);
-  }
-}
-📘 Engine & Framework
-Engine: AMOS – African Market OS Relational Porosity Engine (v9.x)
+## Attribution
 
-API: AMOS-MVR REST API (v1.0)
+Minimum Viable Relationships (MVR), originated by Farouk Mark Mukiibi, African Market OS.
 
-Framework: Minimum Viable Relationships (MVR) Framework™
-DOI (framework): 10.5281/zenodo.17310446
-
-The AMOS-MVR client measures:
-
-Trust & reciprocity
-
-Embeddedness & belonging
-
-Permission & cultural-market fit
-
-Guardian vouchers & continuity
-
-…to estimate relational readiness, residual risk, and safe credit limits for high-context African markets.
-
-🧬 Attribution & Licensing
-The Minimum Viable Relationships (MVR) Framework™ is published under African Market OS.
-
-Base content: CC BY 4.0 for academic / research use
-
-Commercial / applied use of MVR™ / AMOS-MVR (APIs, SDKs, diagnostics, embeddings) requires a license, partnership, or referral agreement with African Market OS.
-
-Learn more:
-
-MVR Framework: https://africanmarketos.com/the-mvr-framework-minimum-viable-relationships/
-
-Commercial & Referral Use Policy:
-https://africanmarketos.com/african-market-os-mvr-framework-commercial-referral-use-policy/
-
-Machine-readable license metadata:
-https://africanmarketos.com/.well-known/mvr-license.json
+Commercial, production, SaaS, consulting, or AI-agent deployment use requires authorization from African Market OS.
