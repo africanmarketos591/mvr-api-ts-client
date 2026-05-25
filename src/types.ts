@@ -42,6 +42,13 @@ export interface EvidenceCompletenessRequest {
   [key: string]: unknown;
 }
 
+export interface ContextCompileRequest extends Record<string, unknown> {
+  analysis_date?: string;
+  requested_use?: string;
+  market_scope?: Record<string, unknown>;
+  evidence_pack?: Array<Record<string, unknown>>;
+}
+
 export interface DecisionCheckRequest extends Record<string, unknown> {
   mode?: "exploratory" | "evidence_backed" | "compiled_evidence";
   subject?: Record<string, unknown>;

@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import {
   DecisionCheckRequest,
+  ContextCompileRequest,
   EntityResolveRequest,
   EvidenceCompletenessRequest,
   MVRApiErrorEnvelope,
@@ -40,7 +41,7 @@ export class MVRClient {
         "Content-Type": "application/json",
         "X-API-Key": this.config.apiKey,
         "X-Response-Profile": this.config.responseProfile,
-        "User-Agent": "@africanmarketos/mvr-api-client/6.32.0"
+        "User-Agent": "@africanmarketos/mvr-api-client/6.32.1"
       }
     });
   }
@@ -91,6 +92,10 @@ export class MVRClient {
 
   evidenceCompleteness(payload: EvidenceCompletenessRequest): Promise<MVRGenericResponse> {
     return this.request({ method: "POST", url: "/v1/evidence-completeness", data: payload });
+  }
+
+  contextCompile(payload: ContextCompileRequest): Promise<MVRGenericResponse> {
+    return this.request({ method: "POST", url: "/v1/context/compile", data: payload });
   }
 
   decisionCheck(payload: DecisionCheckRequest): Promise<MVRGenericResponse> {
