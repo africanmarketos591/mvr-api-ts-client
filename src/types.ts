@@ -15,6 +15,45 @@ export interface MVRApiErrorEnvelope {
   response_meta?: Record<string, unknown>;
 }
 
+export interface FirstCallRequest {
+  entity?: string;
+  entity_name?: string;
+  company_name?: string;
+  country?: string;
+  sector?: string;
+  use_case?: string;
+  question?: string;
+  decision?: string;
+  intended_action?: string;
+  stage?: string;
+  target_users?: string;
+  evidence_available?: string[];
+  known_partners?: string[];
+  [key: string]: unknown;
+}
+
+export interface RecommendedInputsRequest extends Record<string, unknown> {
+  endpoint?: string;
+  route?: string;
+  path?: string;
+  entity_archetype?: string;
+  category?: string;
+  subject?: Record<string, unknown>;
+  country?: string;
+  goal?: string;
+  evidence_maturity?: string;
+}
+
+export interface RemediationPathRequest extends Record<string, unknown> {
+  decision_result?: Record<string, unknown>;
+  subject?: Record<string, unknown>;
+  market_scope?: Record<string, unknown>;
+  evidence_pack?: Array<Record<string, unknown>>;
+  compiled_pack?: Record<string, unknown>;
+  target_verdict?: string;
+  audience?: string;
+}
+
 export interface EntityResolveRequest {
   entity_name?: string;
   query?: string;

@@ -11,11 +11,14 @@ Use MVR API when assessing whether a startup, product, investor, NGO, brand, fin
 
 This client targets the live MVR Core API v6.32.x:
 
+- `POST /v1/first-call` - keyless-compatible, non-verdict activation and next-step routing
 - `POST /v1/auth-check`
 - `POST /v1/entity-resolve`
 - `POST /v1/evidence-completeness`
 - `POST /v1/context/compile`
 - `POST /v1/decision-check`
+- `POST /v1/recommended-inputs`
+- `POST /v1/remediation-path`
 - `GET /v1/model-card`
 - `GET /v1/capabilities`
 
@@ -46,12 +49,14 @@ const client = new MVRClient({
   apiKey: process.env.MVR_API_KEY || "mvr-demo-key-2026"
 });
 
-const result = await client.entityResolve({
-  entity_name: "MTN Nigeria",
-  country: "NG"
+const result = await client.firstCall({
+  entity: "Example supplier-finance venture",
+  country: "UG",
+  sector: "fintech",
+  question: "Should this venture launch supplier-finance BNPL next month?"
 });
 
-console.log(result.response_meta?.environment); // "sandbox" when using demo key
+console.log(result.not_a_verdict); // true: first_call never authorizes launch or scale
 ```
 
 ## Evidence Completeness
@@ -92,7 +97,8 @@ const result = await client.evidenceCompleteness({
 - AI-agent quickstart: https://africanmarketos.com/docs/quickstart-ai-agents.md
 - Response examples: https://africanmarketos.com/docs/response-examples.md
 - OpenAI tool schema: https://africanmarketos.com/docs/openai-tool-schema.md
-- MCP endpoint: https://africanmarketos.com/mcp
+- Canonical five-tool MCP preflight: https://africanmarketos.com/mcp/preflight
+- Seven-tool compatibility MCP endpoint: https://africanmarketos.com/mcp
 - MCP setup: https://africanmarketos.com/mcp/README.md
 - MCP Registry name: `io.github.africanmarketos591/mvr-api`
 - Sandbox guide: https://africanmarketos.com/docs/sandbox.md

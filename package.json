@@ -1,6 +1,6 @@
 {
   "name": "@africanmarketos/mvr-api-client",
-  "version": "6.32.1",
+  "version": "6.32.2",
   "description": "TypeScript client for the MVR API relational-readiness layer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,10 @@
     "url": "https://github.com/africanmarketos591/mvr-api-ts-client/issues"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.18.0"
+  },
+  "overrides": {
+    "form-data": "^4.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
