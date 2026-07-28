@@ -59,7 +59,7 @@ const result = await client.firstCall({
 console.log(result.not_a_verdict); // true: first_call never authorizes launch or scale
 ```
 
-`firstCall` intentionally accepts free-form discovery labels such as `generic_startup`; canonical `EntityArchetype` values become mandatory on `recommendedInputs` and evidence-scoring routes. Evidence enums mirror the production OpenAPI contract. When a compiled pack is assembled in a variable before submission, use `defineCompiledPack(pack)` to retain exact compile-time checking of the ten supported lanes; the API also rejects unknown lanes at runtime.
+`firstCall` intentionally accepts free-form discovery labels such as `generic_startup`; canonical `EntityArchetype` values become mandatory on `recommendedInputs` and evidence-scoring routes. Published top-level and nested privacy, provenance, and artifact enums mirror the production OpenAPI contract while extension fields remain open. When a compiled pack is assembled in a variable before submission, use `defineCompiledPack(pack)` to retain exact compile-time checking of the ten supported lanes; the API also rejects unknown lanes at runtime.
 
 ## Evidence Completeness
 

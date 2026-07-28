@@ -127,6 +127,56 @@ export type SourceConfidence = "high" | "medium" | "low";
 export type ReviewStatus = "pending" | "approved" | "accepted" | "verified" | "reviewed" | "rejected";
 export type PublicMetricScope = "entity_scale" | "country_scale" | "regional_scale" | "city_scale" | "site_scale";
 
+export type ProvenanceExtractionMethod =
+  | "human"
+  | "deterministic_parser"
+  | "llm_inferred"
+  | "automated_query";
+
+export type PrivacyConsentBasis =
+  | "consent"
+  | "contract"
+  | "legitimate_interest"
+  | "public_interest"
+  | "legal_obligation"
+  | "not_applicable";
+
+export type PrivacyRetentionClass = "session_only" | "30d" | "90d" | "1y" | "7y" | "contractual";
+export type PrivacyRedactionStatus = "raw" | "minimized" | "redacted" | "aggregated";
+
+export interface PrivacyEnvelope {
+  contains_pii?: boolean;
+  contains_sensitive_personal_data?: boolean;
+  consent_basis?: PrivacyConsentBasis;
+  retention_class?: PrivacyRetentionClass;
+  redaction_status?: PrivacyRedactionStatus;
+  safe_for_modeling?: boolean;
+  [key: string]: unknown;
+}
+
+export interface ProvenanceLedger {
+  source_family?: string;
+  source_doc_id?: string;
+  source_locator?: string;
+  extraction_method?: ProvenanceExtractionMethod;
+  extraction_confidence?: number;
+  compiler_stage?: string;
+  data_integrity?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface SourceArtifact {
+  artifact_id?: string;
+  media_type?: string;
+  storage_uri?: string;
+  sha256?: string;
+  extraction_method?: ProvenanceExtractionMethod;
+  extractor_version?: string;
+  extracted_at?: string;
+  human_reviewed?: boolean;
+  [key: string]: unknown;
+}
+
 export interface FirstCallSubject {
   entity_name?: string;
   name?: string;
@@ -185,14 +235,14 @@ export interface EvidenceItem {
   human_review?: Record<string, unknown>;
   organ_attestation?: Record<string, unknown>;
   _verifier_attestation?: Record<string, unknown>;
-  privacy_envelope?: Record<string, unknown>;
+  privacy_envelope?: PrivacyEnvelope;
   uncertainty_envelope?: Record<string, unknown>;
-  provenance_ledger?: Record<string, unknown>;
+  provenance_ledger?: ProvenanceLedger;
   survey_payload?: Record<string, unknown>;
   program_payload?: Record<string, unknown>;
   admin_data_payload?: Record<string, unknown>;
   retail_audit_payload?: Record<string, unknown>;
-  source_artifacts?: Array<Record<string, unknown>>;
+  source_artifacts?: SourceArtifact[];
   [key: string]: unknown;
 }
 
