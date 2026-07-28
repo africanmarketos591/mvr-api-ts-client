@@ -57,9 +57,84 @@ export type MVRVerdict =
   | "pilot_ready"
   | "ready_to_scale";
 
+export type EvidenceType =
+  | "public_filing"
+  | "survey"
+  | "interview"
+  | "observation"
+  | "telemetry"
+  | "admin_data"
+  | "evaluation"
+  | "retail_audit"
+  | "social_listening"
+  | "partner_network"
+  | "program_monitoring";
+
+export type EvidenceOrigin =
+  | "public_osint"
+  | "field_research"
+  | "mixed"
+  | "corporate_telemetry"
+  | "platform_telemetry";
+
+export type SourceGrade = "A" | "B" | "C" | "D";
+
+export interface MVRSubject {
+  entity_name?: string;
+  name?: string;
+  country?: string;
+  entity_archetype?: EntityArchetype;
+  category?: string;
+  [key: string]: unknown;
+}
+
+export interface MVRMarketScope {
+  country?: string;
+  sector?: string;
+  city?: string;
+  town_or_zone?: string;
+  region?: string;
+  analysis_date?: string;
+  evaluation_date?: string;
+  [key: string]: unknown;
+}
+
+export interface EvidenceItem {
+  id?: string;
+  evidence_type?: EvidenceType;
+  evidence_origin?: EvidenceOrigin;
+  source_grade?: SourceGrade;
+  source_class?: string;
+  entity_archetype?: EntityArchetype;
+  stakeholder_class?: string;
+  collection_method?: string;
+  freshness_date?: string;
+  evidence_geography?: MVRMarketScope;
+  structured_values?: Record<string, number>;
+  provenance_ledger?: Record<string, unknown>;
+  survey_payload?: Record<string, unknown>;
+  program_payload?: Record<string, unknown>;
+  admin_data_payload?: Record<string, unknown>;
+  retail_audit_payload?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface CompiledPack {
+  public_reality_pack?: EvidenceItem[];
+  telemetry_proxy_pack?: EvidenceItem[];
+  localized_observed_pack?: EvidenceItem[];
+  survey_pack?: EvidenceItem[];
+  retail_audit_pack?: EvidenceItem[];
+  ngo_program_pack?: EvidenceItem[];
+  administrative_data_pack?: EvidenceItem[];
+  evaluation_pack?: EvidenceItem[];
+  partner_network_pack?: EvidenceItem[];
+  social_listening_pack?: EvidenceItem[];
+}
+
 export interface FirstCallRequest {
-  subject?: Record<string, unknown>;
-  market_scope?: Record<string, unknown>;
+  subject?: MVRSubject;
+  market_scope?: MVRMarketScope;
   entity?: string;
   entity_name?: string;
   company_name?: string;
@@ -69,7 +144,7 @@ export interface FirstCallRequest {
   country?: string;
   sector?: string;
   industry?: string;
-  entity_archetype?: string;
+  entity_archetype?: EntityArchetype;
   use_case?: string;
   question?: string;
   intent?: string;
@@ -84,8 +159,8 @@ export interface FirstCallRequest {
   known_partners?: string | string[];
   partners?: string | string[];
   channels?: string | string[];
-  evidence_pack?: Array<Record<string, unknown>>;
-  evidence_items?: Array<Record<string, unknown>>;
+  evidence_pack?: EvidenceItem[];
+  evidence_items?: EvidenceItem[];
   city?: string;
   town_or_zone?: string;
 }
@@ -96,7 +171,7 @@ export interface RecommendedInputsRequest {
   path?: string;
   entity_archetype?: EntityArchetype;
   category?: string;
-  subject?: Record<string, unknown>;
+  subject?: MVRSubject;
   country?: string;
   goal?: string;
   evidence_maturity?: string;
@@ -104,10 +179,10 @@ export interface RecommendedInputsRequest {
 
 export interface RemediationPathRequest {
   decision_result?: Record<string, unknown>;
-  subject?: Record<string, unknown>;
-  market_scope?: Record<string, unknown>;
-  evidence_pack?: Array<Record<string, unknown>>;
-  compiled_pack?: Record<string, unknown>;
+  subject?: MVRSubject;
+  market_scope?: MVRMarketScope;
+  evidence_pack?: EvidenceItem[];
+  compiled_pack?: CompiledPack;
   target_verdict?: MVRVerdict;
   audience?: string;
   gap_plan?: Record<string, unknown>;
@@ -128,37 +203,30 @@ export interface EntityResolveRequest {
 }
 
 export interface EvidenceCompletenessRequest {
-  subject: {
-    entity_name: string;
-    entity_archetype: string;
-    country?: string;
-    [key: string]: unknown;
-  };
-  market_scope: {
-    country: string;
-    city?: string;
-    sector?: string;
-    analysis_date?: string;
-    [key: string]: unknown;
-  };
-  evidence_pack: Array<Record<string, unknown>>;
+  subject: MVRSubject & { entity_name: string; entity_archetype: EntityArchetype };
+  market_scope: MVRMarketScope & { country: string };
+  evidence_pack: EvidenceItem[];
+  compiled_pack?: CompiledPack;
   stakeholder_scope?: string[];
-  target_verdict?: string;
+  target_verdict?: MVRVerdict;
   [key: string]: unknown;
 }
 
 export interface ContextCompileRequest extends Record<string, unknown> {
   analysis_date?: string;
   requested_use?: string;
-  market_scope?: Record<string, unknown>;
-  evidence_pack?: Array<Record<string, unknown>>;
+  subject?: MVRSubject;
+  market_scope?: MVRMarketScope;
+  evidence_pack?: EvidenceItem[];
+  compiled_pack?: CompiledPack;
 }
 
 export interface DecisionCheckRequest extends Record<string, unknown> {
   mode?: "exploratory" | "evidence_backed" | "compiled_evidence";
-  subject?: Record<string, unknown>;
-  market_scope?: Record<string, unknown>;
-  evidence_pack?: Array<Record<string, unknown>>;
+  subject?: MVRSubject;
+  market_scope?: MVRMarketScope;
+  evidence_pack?: EvidenceItem[];
+  compiled_pack?: CompiledPack;
 }
 
 export interface MVRResponseMeta {
