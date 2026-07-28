@@ -79,6 +79,63 @@ export type EvidenceOrigin =
 
 export type SourceGrade = "A" | "B" | "C" | "D";
 
+export type SourceClass =
+  | "entity_reported"
+  | "independently_audited"
+  | "regulator_published"
+  | "administrative_record"
+  | "probability_sample_survey"
+  | "nonprobability_survey"
+  | "structured_field_research"
+  | "third_party_evaluation"
+  | "retail_audit"
+  | "telemetry_internal"
+  | "media_reported"
+  | "model_inferred";
+
+export type StakeholderClass =
+  | "agent" | "anchor_customer" | "bank_lender" | "beneficiary" | "board" | "board_member"
+  | "chama_member" | "channel_gatekeeper" | "chief" | "civil_society_org" | "clinic"
+  | "community_guardian" | "community_leader" | "competitor" | "competitors" | "consumer"
+  | "cooperative_member" | "court" | "courts" | "creditor" | "creditors"
+  | "customary_land_authority" | "customer" | "customs" | "customs_authority" | "distributor"
+  | "donor" | "donor_guardian" | "enumerator" | "farmer" | "field_agent" | "field_supervisor"
+  | "gatekeeper" | "guarantor" | "guardian" | "guardian_node" | "implementing_partner"
+  | "incumbent" | "incumbent_competitor" | "incumbents" | "influencer" | "informal_logistics"
+  | "informal_logistics_partner" | "institutional_guardian" | "internal_operations" | "internal_operator"
+  | "investor" | "investor_board" | "investors" | "journalist" | "journalists" | "judiciary"
+  | "judiciary_court" | "labor_union" | "labour_union" | "land_custodian" | "land_owner"
+  | "landlord" | "landowner" | "lender" | "lender_creditor" | "lenders" | "market_queen"
+  | "media" | "media_press" | "member" | "micro_logistics" | "mobile_money_agent"
+  | "organized_labour" | "platform_partner" | "political_guardian" | "press" | "public_official"
+  | "regulator" | "regulatory_body" | "religious_leader" | "research_respondent_group"
+  | "retail_partner" | "retailer" | "retailer_partner" | "revenue_authority" | "sacco_member"
+  | "school" | "service_provider" | "shareholder" | "shareholders" | "supplier" | "suppliers"
+  | "tax_authority" | "tax_revenue_authority" | "teacher" | "traditional_chief" | "union"
+  | "upstream_supplier" | "upstream_vendor" | "vc" | "vendor" | "vendors" | "venture_capital"
+  | "worker_association" | "works_council";
+
+export type CollectionMethod =
+  | "structured_interview_protocol" | "expert_ethnographic_observation" | "field_observation"
+  | "survey_platform_verified" | "survey_paper_based" | "key_informant_interview"
+  | "team_consensus_estimate" | "founder_intuition" | "inferred_from_secondary" | "direct"
+  | "inferred" | "secondary_source" | "corporate_telemetry" | "database_aggregation"
+  | "expert_opinion" | "intercept_interview";
+
+export type GuardianTier = "macro_regulator" | "meso_community" | "micro_street";
+export type SourceConfidence = "high" | "medium" | "low";
+export type ReviewStatus = "pending" | "approved" | "accepted" | "verified" | "reviewed" | "rejected";
+export type PublicMetricScope = "entity_scale" | "country_scale" | "regional_scale" | "city_scale" | "site_scale";
+
+export interface FirstCallSubject {
+  entity_name?: string;
+  name?: string;
+  country?: string;
+  entity_archetype?: string;
+  category?: string;
+  [key: string]: unknown;
+}
+
 export interface MVRSubject {
   entity_name?: string;
   name?: string;
@@ -101,21 +158,41 @@ export interface MVRMarketScope {
 
 export interface EvidenceItem {
   id?: string;
+  evidence_id?: string;
   evidence_type?: EvidenceType;
   evidence_origin?: EvidenceOrigin;
   source_grade?: SourceGrade;
-  source_class?: string;
+  source_class?: SourceClass;
   entity_archetype?: EntityArchetype;
-  stakeholder_class?: string;
-  collection_method?: string;
+  stakeholder_class?: StakeholderClass;
+  guardian_tier?: GuardianTier;
+  collection_method?: CollectionMethod;
+  source_confidence?: SourceConfidence;
   freshness_date?: string;
   evidence_geography?: MVRMarketScope;
+  geography?: MVRMarketScope;
+  temporal?: Record<string, unknown>;
+  public_metric_scope?: PublicMetricScope;
+  public_metrics?: Record<string, unknown>;
   structured_values?: Record<string, number>;
+  structured_values_scale?: string;
+  behavioral_values?: Record<string, unknown>;
+  structured_values_provenance?: Record<string, unknown>;
+  human_reviewed?: boolean;
+  review_status?: ReviewStatus;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  human_review?: Record<string, unknown>;
+  organ_attestation?: Record<string, unknown>;
+  _verifier_attestation?: Record<string, unknown>;
+  privacy_envelope?: Record<string, unknown>;
+  uncertainty_envelope?: Record<string, unknown>;
   provenance_ledger?: Record<string, unknown>;
   survey_payload?: Record<string, unknown>;
   program_payload?: Record<string, unknown>;
   admin_data_payload?: Record<string, unknown>;
   retail_audit_payload?: Record<string, unknown>;
+  source_artifacts?: Array<Record<string, unknown>>;
   [key: string]: unknown;
 }
 
@@ -132,8 +209,14 @@ export interface CompiledPack {
   social_listening_pack?: EvidenceItem[];
 }
 
+export function defineCompiledPack<T extends CompiledPack>(
+  pack: T & Record<Exclude<keyof T, keyof CompiledPack>, never>
+): T {
+  return pack;
+}
+
 export interface FirstCallRequest {
-  subject?: MVRSubject;
+  subject?: FirstCallSubject;
   market_scope?: MVRMarketScope;
   entity?: string;
   entity_name?: string;
@@ -144,7 +227,7 @@ export interface FirstCallRequest {
   country?: string;
   sector?: string;
   industry?: string;
-  entity_archetype?: EntityArchetype;
+  entity_archetype?: string;
   use_case?: string;
   question?: string;
   intent?: string;
@@ -159,8 +242,8 @@ export interface FirstCallRequest {
   known_partners?: string | string[];
   partners?: string | string[];
   channels?: string | string[];
-  evidence_pack?: EvidenceItem[];
-  evidence_items?: EvidenceItem[];
+  evidence_pack?: Array<Record<string, unknown>>;
+  evidence_items?: Array<Record<string, unknown>>;
   city?: string;
   town_or_zone?: string;
 }
