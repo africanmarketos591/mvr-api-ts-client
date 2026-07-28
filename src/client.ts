@@ -4,9 +4,12 @@ import {
   ContextCompileRequest,
   EntityResolveRequest,
   EvidenceCompletenessRequest,
+  FirstCallRequest,
   MVRApiErrorEnvelope,
   MVRClientConfig,
-  MVRGenericResponse
+  MVRGenericResponse,
+  RecommendedInputsRequest,
+  RemediationPathRequest
 } from "./types";
 
 export class MVRApiError extends Error {
@@ -41,7 +44,7 @@ export class MVRClient {
         "Content-Type": "application/json",
         "X-API-Key": this.config.apiKey,
         "X-Response-Profile": this.config.responseProfile,
-        "User-Agent": "@africanmarketos/mvr-api-client/6.32.1"
+        "User-Agent": "@africanmarketos/mvr-api-client/6.32.3"
       }
     });
   }
@@ -86,6 +89,10 @@ export class MVRClient {
     return this.request({ method: "POST", url: "/v1/auth-check", data: {} });
   }
 
+  firstCall(payload: FirstCallRequest = {}): Promise<MVRGenericResponse> {
+    return this.request({ method: "POST", url: "/v1/first-call", data: payload });
+  }
+
   entityResolve(payload: EntityResolveRequest): Promise<MVRGenericResponse> {
     return this.request({ method: "POST", url: "/v1/entity-resolve", data: payload });
   }
@@ -100,6 +107,14 @@ export class MVRClient {
 
   decisionCheck(payload: DecisionCheckRequest): Promise<MVRGenericResponse> {
     return this.request({ method: "POST", url: "/v1/decision-check", data: payload });
+  }
+
+  recommendedInputs(payload: RecommendedInputsRequest = {}): Promise<MVRGenericResponse> {
+    return this.request({ method: "POST", url: "/v1/recommended-inputs", data: payload });
+  }
+
+  remediationPath(payload: RemediationPathRequest = {}): Promise<MVRGenericResponse> {
+    return this.request({ method: "POST", url: "/v1/remediation-path", data: payload });
   }
 
   modelCard(): Promise<MVRGenericResponse> {
