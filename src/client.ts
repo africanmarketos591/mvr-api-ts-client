@@ -44,7 +44,7 @@ export class MVRClient {
         "Content-Type": "application/json",
         "X-API-Key": this.config.apiKey,
         "X-Response-Profile": this.config.responseProfile,
-        "User-Agent": "@africanmarketos/mvr-api-client/6.32.2"
+        "User-Agent": "@africanmarketos/mvr-api-client/6.32.3"
       }
     });
   }

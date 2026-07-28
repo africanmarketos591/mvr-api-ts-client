@@ -29,6 +29,9 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Run client regression tests
+        run: npm test
+
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build

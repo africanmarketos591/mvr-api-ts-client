@@ -1,6 +1,6 @@
 {
   "name": "@africanmarketos/mvr-api-client",
-  "version": "6.32.2",
+  "version": "6.32.3",
   "description": "TypeScript client for the MVR API relational-readiness layer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test": "npm run build && node --test tests/*.test.cjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["mvr", "api", "minimum-viable-relationships", "mcp", "openapi", "relational-readiness", "ai-agents"],
